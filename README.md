@@ -2,9 +2,13 @@
 StarRez Logger (Package Pickups, Package Labels, Key Lockouts)
 
 # StarRez Logger
+
 **Automation Tool for Front Desk Logging**
+
 Desk Services, Campus Housing, University of Waterloo
-Version: Production | Last updated: February 2026
+
+Version: Production 
+Last updated: February 2026
 
 ---
 
