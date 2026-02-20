@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "StarRez Package Logger",
+  "version": "3.1.0",
+  "description": "Automates package, lockout, and label logging for UWP Front Desk operations in StarRez.",
+  "permissions": [
+    "clipboardWrite",
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.starrezhousing.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.starrezhousing.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "StarRez Logger"
+  }
+}
