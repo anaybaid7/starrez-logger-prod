@@ -1,121 +1,120 @@
 # StarRez Logger Production Plugin (Campus Housing - Desk Services - University of Waterloo (ON))
 StarRez Logger (Package Pickups, Package Labels, Key Lockouts)
 
-# StarRez Logging Automation Tool
-**Maintained by:** Anay Baid  
-**Last updated:** February 20th, 2026 (Friday)
-**Version:** Final
+# StarRez Logger
+**Automation Tool for Front Desk Logging**
+Desk Services, Campus Housing, University of Waterloo
+Version: Production | Last updated: February 2026
 
 ---
 
-## What this is
+## Overview
 
-Front desk logging in StarRez is slow. Opening a profile, reading the student number, copying the room code, typing it all out in the right format, checking the time — it takes 20+ seconds per entry and there's always room to make a mistake, especially at 3am during a busy night.
+Standard front desk logging in StarRez requires staff to manually read a student number, copy a room code, format the entry correctly, and note the time. This takes approximately 20 seconds per entry and introduces room for error, particularly during busy periods.
 
-This Chrome extension fixes that. It reads the student data already on your screen and generates the correctly-formatted log entry with one click. Package logs, lockout logs, and package labels — all done in under a second, always in the right format.
+This Chrome extension eliminates that process. It reads the student data already visible on screen and produces a correctly formatted log entry with a single click. Package logs, lockout logs, and package labels are generated automatically, always in the correct format.
 
-It works by injecting a few extra buttons directly into the StarRez interface. No new tabs, no switching windows, no typing.
+The extension adds buttons directly to the StarRez interface. No new tabs, no switching between windows.
 
 ---
 
 ## Installation
 
-This should only be installed by Anay Baid or an authorized person on designated desk workstations. It's not complicated, but it's not meant to be a self-serve thing for general staff.
+This extension should only be installed by an authorized person on designated desk workstations.
 
-**Steps:**
+1. Download the extension folder (the folder containing `manifest.json`)
+2. Open Chrome and navigate to `chrome://extensions`
+3. Enable **Developer Mode** using the toggle in the top right corner
+4. Click **Load Unpacked** and select the extension folder
+5. Open any student profile in StarRez to confirm the buttons are visible
 
-1. Download the extension folder (the one containing `manifest.json`)
-2. Open Chrome and go to `chrome://extensions`
-3. Toggle **Developer Mode** on (top right corner)
-4. Click **Load unpacked** and select the extension folder
-5. Open any student profile in StarRez — if you see the new buttons, you're good
+To update to a newer version, replace the folder contents and click the refresh icon on the extension card in `chrome://extensions`.
 
-When a new version comes out, just replace the folder contents and hit the refresh icon on the extension card in `chrome://extensions`.
-
-The extension shows a default puzzle-piece icon in the Chrome toolbar. That's expected — there's no custom icon. It doesn't affect anything.
+The extension displays a default icon in the Chrome toolbar. This is expected and does not affect functionality.
 
 ---
 
-## How to use it
+## How to Use
 
-### Logging a package
+### Logging a Package
 
-1. Open the student's profile in StarRez
-2. Go to the **Parcels** section — you'll see a **Copy Log** button next to the standard Issue button
-3. Click it. Button turns green, log is on your clipboard
-4. Paste into the spreadsheet
+Open the student profile in StarRez and navigate to the Parcels section. A **Copy Log** button appears next to the standard Issue button. Click it and paste the result into the log spreadsheet.
 
-If the student has more than one parcel, a second button appears showing the count (e.g. **Copy 3 pkgs**) so you can log all of them at once.
+If the student has more than one parcel, an additional button appears showing the total count (for example, **Copy 3 pkgs**), allowing all packages to be logged in a single action.
 
-**What gets copied:**
+**Format copied to clipboard:**
 ```
-A.B (20990921) UWP-BECK-204a 1 pkg @ 2:30 pm - J.D
+J.S (20112233) V1-N6-109a 1 pkg @ 2:30 pm - A.B
 ```
-Student initials, student number, room code, package count, time of click, your initials. All pulled automatically from what's on screen.
+
+The entry includes student initials, student number, room code, package count, time of action, and the logged-in staff member's initials. All values are pulled automatically from what is visible on screen.
 
 ---
 
-### Printing a package label
+### Printing a Package Label
 
-1. Open the student's profile
-2. Look near the **Entry Actions** button in the top right — there's a **Print Label** button just to the left of it
-3. Click it, paste into your label software or Word template
+On any student profile, a **Print Label** button appears to the left of the Entry Actions button in the top right area of the screen. Click it and paste the result into your label software or Word template.
 
-**What gets copied:**
+**Format copied to clipboard:**
 ```
 1/23/2026 2:30p.m.
-20990921
-Anay Baid
-UWP-BECK-204a
-FDA: J.D
+20112233
+Jordan Smith
+V1-N6-109a
+FDA: A.B
 ```
 
 ---
 
-### Logging a lockout
+### Logging a Lockout
 
-1. Open the student's profile
-2. A **Copy Lockout** button appears in the Keys section of the Rez 360 sidebar (right side of the profile)
-3. Click it — a small prompt appears asking for the reason (e.g. "lost key", "forgot in room")
-4. Type the reason and hit Enter or click Copy Log
-5. Paste into the lockout log
+Open the student profile. A **Copy Lockout** button appears in the Keys section of the Rez 360 sidebar on the right side of the screen.
 
-The tool reads the key codes directly from the Keys card on the student's profile — Bedroom, Floor, Suite, or any LOANER keys assigned to them. If there are active loaner keys, those get used. If not, it falls back to whatever keys are listed.
+When clicked, a small prompt appears asking for the reason for the lockout (for example, "forgot key in room" or "lost key"). Enter the reason and press Enter or click **Copy Log**. Paste the result into the lockout log.
 
-**What gets copied:**
+The tool reads key codes directly from the Keys card on the student profile, including Bedroom, Floor, Suite, and any active Loaner keys. If active loaner keys are present, those are used. Otherwise, all listed keys are included.
+
+**Format copied to clipboard:**
 ```
-A.B (12345678) BH-204a KC: 26AA21; forgot key in room - J.D
+J.S (20112233) V1-N6-109a KC: 26AA21; forgot key in room - A.B
 ```
 
-If the tool says "No loaner keys found" — that means there genuinely aren't any keys listed on that student's profile. Don't force it, do a manual entry.
+> If the tool returns "No loaner keys found," the student has no keys listed in their profile. This is intentional. Do not attempt to force an entry. Complete a manual log if needed.
 
 ---
 
-### Activity history
+### Activity History
 
-There's a **History** button that appears near Entry Actions. Click it to see a panel with your recent activity — everything that's been logged this session. You can filter by the last 5, 10, or all entries, or enter a custom number. Click any entry to copy it again. There's a delete button on each entry, and a Clear All if you want to wipe it.
+A **History** button appears near the Entry Actions button. Clicking it opens a panel showing recent activity logged during the current session.
 
-Below the History button you'll also see a small count showing how many packages have been logged today vs yesterday — useful for a quick sanity check during shift handover.
+From the history panel, staff can:
+- Filter entries by the last 5, last 10, all entries, or a custom number
+- Click any entry to copy it to clipboard again
+- Delete individual entries or clear all at once
+
+A small count below the History button displays how many packages have been logged today versus yesterday, useful for a quick check during shift handover.
 
 ---
 
-## Technical notes (for IST / management)
+## Technical Notes
 
-The extension is built to Chrome's MV3 standard — the current and most restrictive extension architecture.
+*This section is intended for IT Services or management reviewing the extension for approval or deployment.*
 
-- **Read-only:** It only reads text already rendered on screen. It cannot access StarRez's backend, API, or any data not visible to the logged-in user
-- **No network requests:** All processing happens locally in the browser. Nothing is sent anywhere
-- **No student data stored:** The activity log is kept in the browser's localStorage on the local machine only. It contains the formatted log strings (the same text you'd paste into a spreadsheet) and timestamps. No raw student data beyond what's in those strings
-- **Scoped to one domain:** The extension only activates on `uwaterloo.starrezhousing.com` — no other sites
+The extension is built to Chrome's Manifest V3 standard, which is the current and most restrictive extension architecture available.
 
-**Permissions the extension uses:**
+- **Read-only access** — The extension only reads text that is already rendered on screen. It does not access StarRez's backend, API, or any data not already visible to the logged-in user.
+- **No network requests** — All processing is done locally in the browser. No data is sent to any external server.
+- **No raw student data stored** — The activity log is saved in the browser's localStorage on the local machine only. It contains formatted log strings and timestamps. No additional student data is retained beyond what appears in those strings.
+- **Domain scoped** — The extension activates only on `uwaterloo.starrezhousing.com`. It does not run on any other website.
 
-| Permission | Why |
+**Permissions used:**
+
+| Permission | Purpose |
 |---|---|
-| `clipboardWrite` | To copy the log entry to clipboard when a button is clicked |
-| `storage` | Local activity log storage |
-| `activeTab` + `scripting` | So the popup can read the activity log from the active StarRez tab |
-| `host: uwaterloo.starrezhousing.com` | Scopes the extension to StarRez only |
+| `clipboardWrite` | Copies the generated log entry to the clipboard when a button is clicked |
+| `storage` | Stores the local activity log |
+| `activeTab` + `scripting` | Allows the extension popup to read activity data from the active StarRez tab |
+| `host: uwaterloo.starrezhousing.com` | Restricts the extension to the StarRez domain only |
 
 The extension does not request access to browsing history, other tabs, network traffic, or any other website.
 
@@ -123,29 +122,21 @@ The extension does not request access to browsing history, other tabs, network t
 
 ## Troubleshooting
 
-**Buttons didn't appear after opening a profile**  
-StarRez is a single-page app — it updates the page content without doing a full reload. The extension detects this and injects buttons automatically, usually within half a second. If they don't show up, wait a couple seconds and try a page refresh (F5).
+**Buttons did not appear after opening a profile**
+StarRez is a single-page application and updates content without a full page reload. The extension detects navigation changes and injects buttons automatically, usually within one second. If buttons do not appear, wait a moment and press F5 to refresh.
 
-**Switched to a different student but something looks off**  
-The extension watches for navigation changes and refreshes everything when it detects a new profile. If something looks stale, F5 fixes it.
+**Something looks incorrect after switching to a different student**
+The extension monitors for profile changes and refreshes automatically. If the display appears stale, pressing F5 will resolve it.
 
-**Copy Lockout says "No loaner keys found"**  
-That student has no keys listed in their Keys section. The tool won't generate a blank entry — that's intentional. Do a manual log entry if you need to proceed.
+**Copy Lockout returns "No loaner keys found"**
+The student has no keys listed in their Keys section. The tool will not generate a blank entry. Complete a manual log entry to proceed.
 
-**The Keys section / Copy Lockout button took a few seconds to appear**  
-The Rez 360 sidebar loads separately from the rest of the profile. The extension watches for it and injects the button as soon as the Keys section appears. On slower connections this can take a few seconds — it'll get there.
+**The Copy Lockout button took a few seconds to appear**
+The Rez 360 sidebar loads independently from the rest of the profile. The extension monitors for it and injects the button as soon as the Keys section becomes available. On slower connections this may take a few seconds.
 
-**Something's broken and F5 doesn't fix it**  
-Email Anay Baid with a screenshot. For anything urgent at the desk, manual entry in the meantime.
-
----
-
-## Questions or bugs
-
-Email Anay Baid or drop a message with a screenshot of what happened. Please don't try to modify the extension files yourself — it'll likely break something and make it harder to debug later.
+**Issue persists after refreshing**
+Contact the extension maintainer with a screenshot. For anything time-sensitive at the desk, complete a manual entry in the meantime.
 
 ---
 
-*Related: Mail Processing · Daily Tasks · Lockout Procedure · Submitting an IST Ticket*
-
-
+*Desk Services, Campus Housing, University of Waterloo*
