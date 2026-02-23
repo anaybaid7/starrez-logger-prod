@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "StarRez Package Logger",
   "version": "3.1.0",
-  "description": "Automates package, lockout, and label logging for UWP Front Desk operations in StarRez.",
+  "description": "Automates package, lockout, and label logging for Front Desk operations in StarRez (Waterloo)",
   "permissions": [
     "clipboardWrite",
     "storage",
