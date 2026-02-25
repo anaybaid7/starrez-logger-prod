@@ -1,7 +1,5 @@
-# StarRez Logger Production Plugin (Campus Housing - Desk Services - University of Waterloo (ON))
+# StarRez Logger Production Plugin (Campus Housing - Desk Services) 
 StarRez Logger (Package Pickups, Package Labels, Key Lockouts)
-
-# StarRez Logger
 
 **Automation Tool for Front Desk Logging**
 
