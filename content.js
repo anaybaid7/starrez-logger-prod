@@ -1,39 +1,40 @@
 // ============================================================================
-// StarRez Package Logger v2.6 - KEYS FIX
-// Only change from original: createLockoutButton() now uses a MutationObserver
-// on #ui-script-rez360 instead of a retry loop, and finds the H3 by "KEYS" text
+// StarRez Package Logger v2.7 - LOCKOUT REASON MODAL
+// Changes from v2.6: generateLockoutEntry() now accepts a reason parameter,
+// tryInjectLockoutButton() click handler opens a styled inline modal for reason
+// input before generating the entry. DEBUG set to false for production.
 // ============================================================================
-
+ 
 const CONFIG = {
-    DEBUG: true, 
+    DEBUG: false,
     RESIDENCE_PATTERN: /[A-Z0-9]+[NS]?-(?:[A-Z0-9]+-)?\d+[a-z]/i,
     STUDENT_NUMBER_PATTERN: /^\d{8}$/,
-    CACHE_DURATION: 10000,            
-    INIT_DEBOUNCE: 300,              
-    OBSERVER_DEBOUNCE: 500,          
+    CACHE_DURATION: 10000,
+    INIT_DEBOUNCE: 300,
+    OBSERVER_DEBOUNCE: 500,
     BUTTON_ENABLE_DELAY: 200,
-    PREVIEW_DURATION: 4000,          
+    PREVIEW_DURATION: 4000,
     MAX_VALIDATION_ATTEMPTS: 20
 };
-
+ 
 const state = {
     lastExtracted: { name: null, studentNumber: null, roomSpace: null, timestamp: null },
     lastBreadcrumb: null,
     validationAttempts: 0,
     timers: { init: null, observer: null },
-    keysObserver: null  // NEW: dedicated observer for Rez360 keys section
+    keysObserver: null
 };
-
+ 
 const log = (...args) => CONFIG.DEBUG && console.log('[PKG-LOGGER]', ...args);
 const error = (...args) => console.error('[PKG-LOGGER ERROR]', ...args);
-
+ 
 const clearTimer = (timerName) => {
     if (state.timers[timerName]) {
         clearTimeout(state.timers[timerName]);
         state.timers[timerName] = null;
     }
 };
-
+ 
 function getStaffName() {
     const scripts = document.querySelectorAll('script');
     for (const script of scripts) {
@@ -42,7 +43,7 @@ function getStaffName() {
     }
     return null;
 }
-
+ 
 function getInitials(fullName) {
     if (!fullName) return 'X.X';
     if (fullName.includes(',')) {
@@ -58,7 +59,7 @@ function getInitials(fullName) {
     }
     return parts.map(p => p[0]).join('').toUpperCase() + '.X';
 }
-
+ 
 function getCurrentBreadcrumb() {
     const breadcrumbs = document.querySelectorAll('habitat-header-breadcrumb-item');
     for (const crumb of breadcrumbs) {
@@ -69,30 +70,30 @@ function getCurrentBreadcrumb() {
     }
     return null;
 }
-
+ 
 function getStudentDataFromRez360() {
     const data = {};
     const detailContainer = document.body;
     let containerText = detailContainer.innerText;
-    
+ 
     const entryIdIndex = containerText.indexOf('EntryID:');
     if (entryIdIndex !== -1) {
         containerText = containerText.substring(entryIdIndex);
     }
-    
+ 
     data.fullName = getCurrentBreadcrumb();
     if (!data.fullName) return null;
-    
+ 
     const studentNumMatch = containerText.match(/Student Number\s+(\d{8})/);
     if (studentNumMatch) data.studentNumber = studentNumMatch[1];
     else return null;
-    
+ 
     data.roomSpace = extractBedspace(containerText);
     if (!data.roomSpace) return null;
-    
+ 
     return validateStudentData(data);
 }
-
+ 
 function extractBedspace(containerText) {
     const methods = [
         () => {
@@ -117,7 +118,7 @@ function extractBedspace(containerText) {
     }
     return null;
 }
-
+ 
 function validateStudentData(data) {
     if (data.fullName && CONFIG.STUDENT_NUMBER_PATTERN.test(data.studentNumber) && CONFIG.RESIDENCE_PATTERN.test(data.roomSpace)) {
         state.lastExtracted = { ...data, timestamp: Date.now() };
@@ -125,21 +126,21 @@ function validateStudentData(data) {
     }
     return null;
 }
-
+ 
 function getCurrentTime() {
     const now = new Date();
     const hours = now.getHours() % 12 || 12;
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes} ${now.getHours() >= 12 ? 'pm' : 'am'}`;
 }
-
+ 
 function getFormattedDateTime() {
     const now = new Date();
     const hours = now.getHours() % 12 || 12;
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()} ${hours}:${minutes}${now.getHours() >= 12 ? 'p.m.' : 'a.m.'}`;
 }
-
+ 
 function generateLogEntry(packageCount = 1) {
     try {
         const studentData = getStudentDataFromRez360();
@@ -152,24 +153,18 @@ function generateLogEntry(packageCount = 1) {
         return { success: true, logEntry, data: { ...studentData, staffInitials, staffName } };
     } catch (err) { return { success: false, error: err.message }; }
 }
-
-// ============================================================================
-// KEY EXTRACTION — scoped to Rez360 Keys card only
-// Fixes the 2-3 refresh bug by reading from #ui-script-rez360 directly
-// ============================================================================
+ 
 function extractKeyCodes(studentName, studentID) {
-    // Find KEYS H3 document-wide (lives in ui-detail-section-entry-rez360-{id})
     const h3 = [...document.querySelectorAll('h3')]
         .find(el => el.innerText.trim().toUpperCase() === 'KEYS');
     if (!h3) return null;
-
-    // Walk up to container holding key data
+ 
     let card = h3;
     while (card.parentElement) {
         card = card.parentElement;
         if (/(?:Bedroom|Floor|Suite|Mail|Unit|LOANER)\s*:/i.test(card.innerText)) break;
     }
-
+ 
     const matches = [...card.innerText.matchAll(/(?:Bedroom|Floor|Suite|Mail|Unit|LOANER)[^:\r\n]*:\s*([A-Z0-9]+)/gi)];
     const loanerCodes = new Set();
     const allCodes = new Set();
@@ -180,27 +175,123 @@ function extractKeyCodes(studentName, studentID) {
             if (/LOANER/i.test(m[0])) loanerCodes.add(code);
         }
     }
-    // Prefer LOANER keys, fall back to all keys (Bedroom/Suite/Floor)
     const result = loanerCodes.size > 0 ? [...loanerCodes] : [...allCodes];
     return result.length > 0 ? result : null;
 }
-
-function generateLockoutEntry() {
+ 
+// ============================================================================
+// LOCKOUT REASON MODAL
+// Shows a styled inline prompt before generating the lockout entry.
+// Calls onConfirm(reason) when the FDA submits, or onCancel() if dismissed.
+// ============================================================================
+function showLockoutReasonModal(onConfirm, onCancel) {
+    document.getElementById('lockout-reason-modal')?.remove();
+ 
+    const overlay = document.createElement('div');
+    overlay.id = 'lockout-reason-modal';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+        z-index: 99999; display: flex; align-items: center; justify-content: center;
+    `;
+ 
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: white; border-radius: 10px; padding: 22px 24px; width: 360px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.22); font-family: -apple-system, sans-serif;
+    `;
+ 
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size: 15px; font-weight: 700; color: #1a1d2e; margin-bottom: 4px;';
+    title.textContent = '🔑 Lockout Reason';
+ 
+    const subtitle = document.createElement('div');
+    subtitle.style.cssText = 'font-size: 12px; color: #8a90a8; margin-bottom: 14px;';
+    subtitle.textContent = 'Enter the reason for this lockout before copying the log entry.';
+ 
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'e.g. forgot key in room, lost key...';
+    input.style.cssText = `
+        width: 100%; padding: 9px 11px; border: 1.5px solid #e8eaf0; border-radius: 7px;
+        font-size: 13px; outline: none; box-sizing: border-box; margin-bottom: 14px;
+        transition: border-color 0.15s;
+    `;
+    input.addEventListener('focus', () => input.style.borderColor = '#667eea');
+    input.addEventListener('blur',  () => input.style.borderColor = '#e8eaf0');
+ 
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+ 
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = `
+        padding: 8px 18px; border: 1.5px solid #e8eaf0; border-radius: 7px;
+        background: white; color: #555; font-size: 13px; font-weight: 600; cursor: pointer;
+    `;
+ 
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Copy Log';
+    confirmBtn.style.cssText = `
+        padding: 8px 18px; border: none; border-radius: 7px;
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white; font-size: 13px; font-weight: 600; cursor: pointer;
+    `;
+ 
+    const handleConfirm = () => {
+        const reason = input.value.trim();
+        if (!reason) {
+            input.style.borderColor = '#e53935';
+            input.placeholder = 'Please enter a reason';
+            input.focus();
+            return;
+        }
+        overlay.remove();
+        onConfirm(reason);
+    };
+ 
+    const handleCancel = () => {
+        overlay.remove();
+        if (onCancel) onCancel();
+    };
+ 
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleConfirm();
+        if (e.key === 'Escape') handleCancel();
+    });
+ 
+    // Close on backdrop click
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) handleCancel(); });
+ 
+    btnRow.append(cancelBtn, confirmBtn);
+    modal.append(title, subtitle, input, btnRow);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+ 
+    // Auto-focus input
+    setTimeout(() => input.focus(), 50);
+}
+ 
+// ============================================================================
+// LOCKOUT ENTRY GENERATION — now accepts reason string
+// ============================================================================
+function generateLockoutEntry(reason) {
     try {
         const studentData = getStudentDataFromRez360();
         if (!studentData) return { success: false, error: 'Data not found' };
-        
+ 
         const keyCodes = extractKeyCodes(studentData.fullName, studentData.studentNumber);
         if (!keyCodes || keyCodes.length === 0) return { success: false, error: 'No Loaner Keys found for this student' };
-        
+ 
         const staffName = getStaffName();
         const staffInitials = staffName ? getInitials(staffName) : 'X.X';
         const initials = getInitials(studentData.fullName);
-        const logEntry = `${initials} (${studentData.studentNumber}) ${studentData.roomSpace} KC: ${keyCodes.join(', ')}; [Fill in Reason] - ${staffInitials}`;
+        const logEntry = `${initials} (${studentData.studentNumber}) ${studentData.roomSpace} KC: ${keyCodes.join(', ')}; ${reason} - ${staffInitials}`;
         return { success: true, logEntry, data: { ...studentData, keyCodes, staffInitials, staffName } };
     } catch (err) { return { success: false, error: err.message }; }
 }
-
+ 
 function generatePackageLabel() {
     try {
         const studentData = getStudentDataFromRez360();
@@ -217,12 +308,12 @@ function generatePackageLabel() {
         return { success: true, logEntry: labelText, data: { ...studentData, dateTime, staffInitials, staffName } };
     } catch (err) { return { success: false, error: err.message }; }
 }
-
+ 
 async function copyToClipboard(text) {
-    try { await navigator.clipboard.writeText(text); return true; } 
+    try { await navigator.clipboard.writeText(text); return true; }
     catch (err) { return false; }
 }
-
+ 
 function createStyledButton(text, gradient) {
     const button = document.createElement('button');
     button.textContent = text;
@@ -235,7 +326,7 @@ function createStyledButton(text, gradient) {
     button.addEventListener('mouseleave', () => { button.style.transform = 'translateY(0)'; button.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)'; });
     return button;
 }
-
+ 
 function showPreview(text, data) {
     document.getElementById('log-preview-popup')?.remove();
     const preview = document.createElement('div');
@@ -249,15 +340,15 @@ function showPreview(text, data) {
     if (data.keyCodes) debugInfo = `Student: ${data.fullName}<br/>Keys: ${data.keyCodes.join(', ')}`;
     else debugInfo = `Student: ${data.fullName}<br/>Room: ${data.roomSpace}`;
     preview.innerHTML = `
-        <div style="font-weight: bold; margin-bottom: 8px; color: #667eea;">Copied to Clipboard</div>
-        <div style="font-size: 11px; color: #999; margin-bottom: 4px;">Logged by: ${data.staffName || 'Unknown'}</div>
-        <div style="background: #f7f7f7; padding: 8px; border-radius: 4px; word-break: break-all; font-weight: 600;">${text.replace(/\n/g, '<br>')}</div>
-        <div style="font-size: 10px; color: #ccc; margin-top: 8px;">${debugInfo}</div>
+<div style="font-weight: bold; margin-bottom: 8px; color: #667eea;">Copied to Clipboard</div>
+<div style="font-size: 11px; color: #999; margin-bottom: 4px;">Logged by: ${data.staffName || 'Unknown'}</div>
+<div style="background: #f7f7f7; padding: 8px; border-radius: 4px; word-break: break-all; font-weight: 600;">${text.replace(/\n/g, '<br>')}</div>
+<div style="font-size: 10px; color: #ccc; margin-top: 8px;">${debugInfo}</div>
     `;
     document.body.appendChild(preview);
     setTimeout(() => { preview.remove(); }, CONFIG.PREVIEW_DURATION);
 }
-
+ 
 function saveToLocalStorage(type, logEntry, data) {
     try {
         const entry = {
@@ -279,10 +370,10 @@ function saveToLocalStorage(type, logEntry, data) {
         localStorage.setItem('pkg_activity', JSON.stringify(existing));
     } catch(e) { log('localStorage save failed:', e); }
 }
-
+ 
 async function handleButtonClick(button, count, originalText, gradient, type) {
     if (button.disabled) return;
-    let result = (type === 'lockout') ? generateLockoutEntry() : (type === 'label') ? generatePackageLabel() : generateLogEntry(count);
+    let result = (type === 'label') ? generatePackageLabel() : generateLogEntry(count);
     if (result.success) {
         if (await copyToClipboard(result.logEntry)) {
             saveToLocalStorage(type, result.logEntry, result.data);
@@ -293,25 +384,50 @@ async function handleButtonClick(button, count, originalText, gradient, type) {
         }
     } else { alert('Error: ' + result.error); }
 }
-
+ 
 // ============================================================================
-// LOCKOUT BUTTON
-// Real container: id="ui-detail-section-entry-rez360-{entryId}" (outside #ui-script-rez360)
-// So we search document-wide for the KEYS H3, not scoped to rez360 root
+// LOCKOUT BUTTON — opens reason modal first, then generates entry
 // ============================================================================
+async function handleLockoutClick(button) {
+    if (button.disabled) return;
+    const gradient = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+ 
+    // Pre-validate keys exist before showing modal — fail fast
+    const studentData = getStudentDataFromRez360();
+    if (!studentData) { alert('Error: Student data not found'); return; }
+    const keyCodes = extractKeyCodes(studentData.fullName, studentData.studentNumber);
+    if (!keyCodes || keyCodes.length === 0) { alert('Error: No Loaner Keys found for this student'); return; }
+ 
+    showLockoutReasonModal(
+        async (reason) => {
+            const result = generateLockoutEntry(reason);
+            if (result.success) {
+                if (await copyToClipboard(result.logEntry)) {
+                    saveToLocalStorage('lockout', result.logEntry, result.data);
+                    button.textContent = 'Copied!';
+                    button.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                    showPreview(result.logEntry, result.data);
+                    setTimeout(() => { button.textContent = 'Copy Lockout'; button.style.background = gradient; }, 2000);
+                }
+            } else { alert('Error: ' + result.error); }
+        },
+        null // cancel — do nothing
+    );
+}
+ 
 function createLockoutButton() {
     if (document.getElementById('lockout-log-btn')) return;
     if (!getCurrentBreadcrumb()) return;
-
+ 
     if (tryInjectLockoutButton()) return;
-
+ 
     if (state.keysObserver) { state.keysObserver.disconnect(); state.keysObserver = null; }
-
+ 
     let resolved = false;
     const timeout = setTimeout(() => {
         if (!resolved) { resolved = true; state.keysObserver?.disconnect(); state.keysObserver = null; }
     }, 20000);
-
+ 
     state.keysObserver = new MutationObserver(() => {
         if (resolved) return;
         if (tryInjectLockoutButton()) {
@@ -325,24 +441,23 @@ function createLockoutButton() {
     state.keysObserver.observe(document.body, { childList: true, subtree: true });
     log('Waiting for KEYS H3...');
 }
-
+ 
 function tryInjectLockoutButton() {
     if (document.getElementById('lockout-log-btn')) return true;
-
-    // Search document-wide — KEYS H3 is in ui-detail-section-entry-rez360-{id}, NOT ui-script-rez360
+ 
     const h3 = [...document.querySelectorAll('h3')]
         .find(el => el.innerText.trim().toUpperCase() === 'KEYS');
     if (!h3) return false;
-
+ 
     const gradient = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
     const button = createStyledButton('Copy Lockout', gradient);
     button.id = 'lockout-log-btn';
-    button.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); handleButtonClick(button, 1, 'Copy Lockout', gradient, 'lockout'); });
+    button.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); handleLockoutClick(button); });
     h3.parentElement.appendChild(button);
     log('Lockout button injected at KEYS H3');
     return true;
 }
-
+ 
 function createLogButtons() {
     const issueButtons = Array.from(document.querySelectorAll('button, input[type="button"], a.button')).filter(b => b.textContent.toLowerCase().includes('issue') && !b.textContent.toLowerCase().includes('reissue'));
     issueButtons.forEach((btn, i) => {
@@ -352,7 +467,7 @@ function createLogButtons() {
         b.addEventListener('click', (e) => { e.preventDefault(); handleButtonClick(b, 1, 'Copy Log', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'package'); });
         btn.parentNode.insertBefore(b, btn.nextSibling);
     });
-
+ 
     const parcelCount = Array.from(document.querySelectorAll('span')).find(s => /^\d+\s+Parcel[s]?$/i.test(s.textContent.trim()));
     if (parcelCount && !document.getElementById('pkg-master')) {
         const count = parseInt(parcelCount.textContent);
@@ -363,10 +478,10 @@ function createLogButtons() {
             parcelCount.parentNode.insertBefore(b, parcelCount.nextSibling);
         }
     }
-
-    createLockoutButton(); // FIXED version
+ 
+    createLockoutButton();
     injectHistoryButton();
-
+ 
     const entryActions = Array.from(document.querySelectorAll('button')).find(el => /Entry Actions/i.test(el.textContent));
     if (entryActions && !document.getElementById('pkg-label')) {
         const b = createStyledButton('Print Label', 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)');
@@ -375,14 +490,13 @@ function createLogButtons() {
         entryActions.parentNode.insertBefore(b, entryActions);
     }
 }
-
+ 
 function clearOldButtons() {
     document.querySelectorAll('[id^="pkg-btn-"], #pkg-master, #lockout-log-btn, #pkg-label').forEach(b => b.remove());
     state.lastExtracted = { name: null };
-    // Also kill the keys observer when switching profiles
     if (state.keysObserver) { state.keysObserver.disconnect(); state.keysObserver = null; }
 }
-
+ 
 function initialize() {
     clearTimer('init');
     state.timers.init = setTimeout(() => {
@@ -395,43 +509,42 @@ function initialize() {
         const container = document.querySelector('.ui-tabs-panel:not(.ui-tabs-hide)') || document.body;
         if (!container.innerText.includes('EntryID:') && state.validationAttempts < CONFIG.MAX_VALIDATION_ATTEMPTS) {
             state.validationAttempts++;
-            setTimeout(initialize, 500); 
+            setTimeout(initialize, 500);
             return;
         }
         state.validationAttempts = 0;
         createLogButtons();
     }, CONFIG.INIT_DEBOUNCE);
 }
-
+ 
 const style = document.createElement('style');
 style.textContent = `@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
 document.head.appendChild(style);
-
+ 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize);
 else initialize();
-
+ 
 const observer = new MutationObserver(() => { clearTimer('observer'); state.timers.observer = setTimeout(initialize, CONFIG.OBSERVER_DEBOUNCE); });
 observer.observe(document.body, { childList: true, subtree: true });
-
-log('StarRez Package Logger v2.6-keysfix Loaded');
-
+ 
+log('StarRez Package Logger v2.7 Loaded');
+ 
 // ============================================================================
-// HISTORY PANEL — inline on page, no popup needed
+// HISTORY PANEL
 // ============================================================================
 function showHistoryPanel() {
     document.getElementById('pkg-history-panel')?.remove();
     let allActivity = JSON.parse(localStorage.getItem('pkg_activity') || '[]');
-    let viewMode = 5; // 5, 'all', or custom number
-
+    let viewMode = 5;
+ 
     function render() {
         document.getElementById('pkg-history-panel')?.remove();
         const activity = viewMode === 'all' ? allActivity : allActivity.slice(0, viewMode);
-
+ 
         const panel = document.createElement('div');
         panel.id = 'pkg-history-panel';
         panel.style.cssText = 'position:fixed;top:60px;right:20px;width:440px;max-height:75vh;background:#fff;border:2px solid #667eea;border-radius:12px;box-shadow:0 8px 32px rgba(102,126,234,.25);z-index:99999;font-family:-apple-system,sans-serif;font-size:12px;display:flex;flex-direction:column;overflow:hidden;';
-
-        // Header
+ 
         const header = document.createElement('div');
         header.style.cssText = 'padding:11px 14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;gap:8px;flex-shrink:0';
         const title = document.createElement('b');
@@ -443,11 +556,10 @@ function showHistoryPanel() {
         closeBtn.onclick = () => panel.remove();
         header.append(title, closeBtn);
         panel.appendChild(header);
-
-        // Controls bar
+ 
         const controls = document.createElement('div');
         controls.style.cssText = 'display:flex;gap:6px;padding:8px 10px;background:#f6f7ff;border-bottom:1px solid #e8eaf0;flex-shrink:0;align-items:center;flex-wrap:wrap';
-
+ 
         const makeCtrlBtn = (label, active, onclick) => {
             const b = document.createElement('button');
             b.textContent = label;
@@ -455,12 +567,11 @@ function showHistoryPanel() {
             b.onclick = onclick;
             return b;
         };
-
-        controls.appendChild(makeCtrlBtn('Latest 5', viewMode === 5, () => { viewMode = 5; render(); }));
-        controls.appendChild(makeCtrlBtn('Latest 10', viewMode === 10, () => { viewMode = 10; render(); }));
-        controls.appendChild(makeCtrlBtn('All', viewMode === 'all', () => { viewMode = 'all'; render(); }));
-
-        // Custom input
+ 
+        controls.appendChild(makeCtrlBtn('Latest 5',  viewMode === 5,    () => { viewMode = 5;     render(); }));
+        controls.appendChild(makeCtrlBtn('Latest 10', viewMode === 10,   () => { viewMode = 10;    render(); }));
+        controls.appendChild(makeCtrlBtn('All',       viewMode === 'all',() => { viewMode = 'all'; render(); }));
+ 
         const customWrap = document.createElement('div');
         customWrap.style.cssText = 'display:flex;align-items:center;gap:4px;margin-left:4px';
         const customInput = document.createElement('input');
@@ -471,14 +582,10 @@ function showHistoryPanel() {
         const customBtn = document.createElement('button');
         customBtn.textContent = 'Go';
         customBtn.style.cssText = 'padding:6px 13px;border:1px solid #667eea;background:#667eea;color:#fff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer';
-        customBtn.onclick = () => {
-            const n = parseInt(customInput.value);
-            if (n > 0) { viewMode = n; render(); }
-        };
+        customBtn.onclick = () => { const n = parseInt(customInput.value); if (n > 0) { viewMode = n; render(); } };
         customWrap.append(customInput, customBtn);
         controls.appendChild(customWrap);
-
-        // Clear all button
+ 
         const clearAll = document.createElement('button');
         clearAll.textContent = 'Clear All';
         clearAll.style.cssText = 'margin-left:auto;padding:6px 13px;border:1px solid #e53935;background:#fff;color:#e53935;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer';
@@ -491,11 +598,10 @@ function showHistoryPanel() {
         };
         controls.appendChild(clearAll);
         panel.appendChild(controls);
-
-        // List
+ 
         const list = document.createElement('div');
         list.style.cssText = 'overflow-y:auto;flex:1';
-
+ 
         if (activity.length === 0) {
             const empty = document.createElement('div');
             empty.style.cssText = 'padding:30px;text-align:center;color:#aaa';
@@ -508,7 +614,7 @@ function showHistoryPanel() {
                 row.style.cssText = 'padding:8px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s;display:flex;gap:8px;align-items:flex-start';
                 row.onmouseenter = () => row.style.background = '#f6f7ff';
                 row.onmouseleave = () => row.style.background = '';
-
+ 
                 const main = document.createElement('div');
                 main.style.cssText = 'flex:1;min-width:0';
                 main.onclick = () => {
@@ -517,10 +623,10 @@ function showHistoryPanel() {
                         setTimeout(() => row.style.background = '', 1000);
                     });
                 };
-
+ 
                 const d = new Date(e.timestamp);
                 const time = (d.getMonth()+1) + '/' + d.getDate() + ' ' + (d.getHours()%12||12) + ':' + String(d.getMinutes()).padStart(2,'0') + (d.getHours()>=12?'p':'a');
-
+ 
                 const meta = document.createElement('div');
                 meta.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:3px';
                 const typeBadge = document.createElement('span');
@@ -533,13 +639,12 @@ function showHistoryPanel() {
                 timeSpan.style.cssText = 'font-size:10px;color:#bbb';
                 timeSpan.textContent = time;
                 meta.append(typeBadge, staffSpan, timeSpan);
-
+ 
                 const logLine = document.createElement('div');
                 logLine.style.cssText = 'color:#333;word-break:break-all;line-height:1.4;white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:11px';
                 logLine.textContent = e.logEntry;
                 main.append(meta, logLine);
-
-                // Delete button
+ 
                 const delBtn = document.createElement('button');
                 delBtn.textContent = '✕';
                 delBtn.title = 'Delete this entry';
@@ -552,34 +657,32 @@ function showHistoryPanel() {
                     localStorage.setItem('pkg_activity', JSON.stringify(allActivity));
                     render();
                 };
-
+ 
                 row.append(main, delBtn);
                 list.appendChild(row);
             });
         }
-
+ 
         panel.appendChild(list);
-
-        // Footer count
+ 
         if (allActivity.length > 0) {
             const footer = document.createElement('div');
             footer.style.cssText = 'padding:6px 12px;background:#f6f7ff;border-top:1px solid #e8eaf0;font-size:10px;color:#aaa;text-align:center;flex-shrink:0';
             footer.textContent = 'Showing ' + activity.length + ' of ' + allActivity.length + ' entries';
             panel.appendChild(footer);
         }
-
+ 
         document.body.appendChild(panel);
     }
-
+ 
     render();
 }
-
+ 
 function injectHistoryButton() {
     if (document.getElementById('pkg-history-btn')) return;
-    // Anchor to Entry Actions button or fallback to first pkg button
     const anchor = [...document.querySelectorAll('button')].find(b => /Entry Actions/i.test(b.textContent));
     if (!anchor) return;
-
+ 
     const btn = createStyledButton('History', 'linear-gradient(135deg, #43cea2 0%, #185a9d 100%)');
     btn.id = 'pkg-history-btn';
     btn.addEventListener('click', (e) => { e.preventDefault(); showHistoryPanel(); });
