@@ -181,8 +181,8 @@ function extractKeyCodes(studentName, studentID) {
  
 // ============================================================================
 // LOCKOUT REASON MODAL
-// Shows a styled inline prompt before generating the lockout entry.
-// Calls onConfirm(reason) when the FDA submits, or onCancel() if dismissed.
+// Shows a styled inline prompt before generating the lockout entry
+// Calls onConfirm(reason) when the FDA submits, or onCancel() if dismissed
 // ============================================================================
 function showLockoutReasonModal(onConfirm, onCancel) {
     document.getElementById('lockout-reason-modal')?.remove();
@@ -386,7 +386,7 @@ async function handleButtonClick(button, count, originalText, gradient, type) {
 }
  
 // ============================================================================
-// LOCKOUT BUTTON — opens reason modal first, then generates entry
+// LOCKOUT BUTTON - opens reason modal first, then generates entry
 // ============================================================================
 async function handleLockoutClick(button) {
     if (button.disabled) return;
