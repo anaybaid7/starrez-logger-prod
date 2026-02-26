@@ -18,9 +18,9 @@ This Chrome extension eliminates that process. It reads the student data already
 The extension is built to Chrome's Manifest V3 standard, which is the current and most restrictive extension architecture available.
 
 - The extension only reads text that is already rendered on screen. It does not access StarRez's backend, API, or any data not already visible to the logged-in user, though that coule be preferred, if done officially through viable sources: https://www.starrez.com/news/starrez-colleague-integration-api-available
-- All processing is done locally in the browser. No data is sent to any external server.
+- All processing is done locally in the browser, and no data is sent to any external server.
 - The activity log is saved in the browser's localStorage on the local machine only. It contains formatted log strings and timestamps. No additional student data is retained beyond what appears in those strings.
-- The extension activates only on `uwaterloo.starrezhousing.com`. It does not run on any other website.
+- The extension activates only on `uwaterloo.starrezhousing.com`, and it does not run on any other website.
 
 **Permissions used:**
 
