@@ -37,8 +37,9 @@ The extension does not request access to browsing history, other tabs, network t
 
 ## Troubleshooting
 
-**Buttons did not appear after opening a profile**
-StarRez is a single-page application and updates content without a full page reload. The extension detects navigation changes and injects buttons automatically, usually within one second. If buttons do not appear, wait a moment and press F5 to refresh.
+**Q1) Buttons did not appear after opening a profile**
+
+A1) StarRez is a single-page application and updates content without a full page reload. The extension detects navigation changes and injects buttons automatically, usually within one second. If buttons do not appear, wait a moment and press F5 to refresh.
 
 **Something looks incorrect after switching to a different student**
 The extension monitors for profile changes and refreshes automatically. If the display appears stale, pressing F5 will resolve it.
