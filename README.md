@@ -37,22 +37,13 @@ The extension does not request access to browsing history, other tabs, network t
 
 ## Troubleshooting
 
-**Q1) Buttons did not appear after opening a profile**
-
-A1) StarRez is a single-page application and updates content without a full page reload. The extension detects navigation changes and injects buttons automatically, usually within one second. If buttons do not appear, wait a moment and press F5 to refresh.
-
-**Something looks incorrect after switching to a different student**
-The extension monitors for profile changes and refreshes automatically. If the display appears stale, pressing F5 will resolve it.
-
-**Copy Lockout returns "No loaner keys found"**
-The student has no keys listed in their Keys section. The tool will not generate a blank entry. Complete a manual log entry to proceed.
-
-**The Copy Lockout button took a few seconds to appear**
-The Rez 360 sidebar loads independently from the rest of the profile. The extension monitors for it and injects the button as soon as the Keys section becomes available. On slower connections this may take a few seconds.
-
-**Issue persists after refreshing**
-Contact the extension maintainer with a screenshot. For anything time-sensitive at the desk, complete a manual entry in the meantime.
-
+| **Issue / Question** | **Explanation / Solution** |
+|---|---|
+| **Buttons did not appear after opening a profile** | StarRez is a single-page application and updates content without a full page reload. The extension detects navigation changes and injects buttons automatically, usually within one second. If buttons do not appear, wait a moment and press **F5** to refresh. |
+| **Something looks incorrect after switching to a different student** | The extension monitors for profile changes and refreshes automatically. If the display appears stale, pressing **F5** will resolve it. |
+| **Copy Lockout returns “No loaner keys found”** | The student has no keys listed in their **Keys** section. The tool will not generate a blank entry. Complete a manual log entry to proceed. |
+| **The Copy Lockout button took a few seconds to appear** | The Rez 360 sidebar loads independently from the rest of the profile. The extension monitors for it and injects the button as soon as the Keys section becomes available. On slower connections this may take a few seconds. |
+| **Issue persists after refreshing** | Contact the extension maintainer with a screenshot. For anything time-sensitive at the desk, complete a manual entry in the meantime. |
 ---
 
 *Desk Services, Campus Housing, University of Waterloo*
