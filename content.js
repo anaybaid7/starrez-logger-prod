@@ -1,8 +1,12 @@
 // ============================================================================
 // StarRez Package Logger v2.7 - LOCKOUT REASON MODAL
+
 // Changes from v2.6: generateLockoutEntry() now accepts a reason parameter,
+
 // tryInjectLockoutButton() click handler opens a styled inline modal for reason
-// input before generating the entry. DEBUG set to false for production.
+// input before generating the entry
+
+// DEBUG set to false for production
 // ============================================================================
  
 const CONFIG = {
